@@ -29,32 +29,46 @@
         ------------------------------>
         <form class="card mb-3" @focusout="validate" ref="filterForm">
           <div class="card-body">
-            <!-- 全文検索（部分） -->
-            <div class="row mb-3">
-              <label for="filter-text" class="col-form-label col-2">全文検索</label>
-              <div class="col-10">
-                <input id="filter-text" v-model="filter.text" type="text" class="form-control">
-              </div>
-            </div>
-            <!-- 管理番号（完全） -->
-            <div class="row mb-3">
-              <label for="filter-no" class="col-form-label col-2">管理番号</label>
-              <div class="col-10">
-                <input id="filter-no" v-model="filter.no" type="text" class="form-control" style="width: 20em; flex: none;">
-              </div>
-            </div>
             <div class="row mb-3">
               <div class="accordion accordion-flush">
                 <!-----------------------------
-                詳細条件セクション
+                基本セクション
                 ------------------------------>
                 <div class="accordion-item">
                   <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group0" aria-expanded="false" aria-controls="group1">
-                      詳細条件
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#filter-1" aria-expanded="true" aria-controls="filter-1">
+                      基本
                     </button>
                   </h2>
-                  <div id="group0" class="accordion-collapse collapse">
+                  <div id="filter-1" class="accordion-collapse collapse show">
+                    <div class="accordion-body">
+                      <!-- 全文検索（部分） -->
+                      <div class="row mb-3">
+                        <label for="filter-text" class="col-form-label col-2">全文検索</label>
+                        <div class="col-10">
+                          <input id="filter-text" v-model="filter.text" type="text" class="form-control">
+                        </div>
+                      </div>
+                      <!-- 管理番号（完全） -->
+                      <div class="row mb-3">
+                        <label for="filter-no" class="col-form-label col-2">管理番号</label>
+                        <div class="col-10">
+                          <input id="filter-no" v-model="filter.no" type="text" class="form-control" style="width: 20em; flex: none;">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-----------------------------
+                詳細セクション
+                ------------------------------>
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#filter-2" aria-expanded="false" aria-controls="filter-2">
+                      詳細
+                    </button>
+                  </h2>
+                  <div id="filter-2" class="accordion-collapse collapse">
                     <div class="accordion-body">
                       <!-- タイトル（部分） -->
                       <div class="row mb-3">
@@ -201,74 +215,88 @@
       <div v-if="isEditMode" class="col-12">
         <form class="card" @focusout="validate" ref="sourceForm">
           <div class="card-body">
-            <!-- 管理番号（自動採番） -->
-            <div class="row mb-3">
-              <label for="source-no" class="col-form-label col-2">管理番号</label>
-              <div class="col-10">
-                <input id="source-no" v-model="source.no" type="text" class="form-control" maxlength="20" required style="width: 20em; flex: none;">
-                <div class="invalid-feedback"></div>
-              </div>
-            </div>
-            <!-- 重複元管理番号 -->
-            <div class="row mb-3">
-              <label for="source-reference_no" class="col-form-label col-2">重複元管理番号</label>
-              <div class="col-10">
-                <input id="source-reference_no" v-model="source.reference_no" type="text" class="form-control" maxlength="20" style="width: 20em; flex: none;">
-                <div class="invalid-feedback"></div>
-              </div>
-            </div>
-            <!-- 顧客担当者 -->
-            <div class="row mb-3">
-              <label for="source-requested_by" class="col-form-label col-2">顧客担当者</label>
-              <div class="col-10">
-                <input id="source-requested_by" v-model="source.requested_by" type="text" class="form-control">
-                <div class="invalid-feedback"></div>
-              </div>
-            </div>
-            <!-- 受付担当者 -->
-            <div class="row mb-3">
-              <label for="source-accepted_by" class="col-form-label col-2">受付担当者</label>
-              <div class="col-10">
-                <input id="source-accepted_by" v-model="source.accepted_by" type="text" class="form-control">
-                <div class="invalid-feedback"></div>
-              </div>
-            </div>
-            <!-- 受付日（カレンダー） -->
-            <div class="row mb-3">
-              <label for="source-accepted_at" class="col-form-label col-2">受付日</label>
-              <div class="col-10">
-                <input id="source-accepted_at" v-model="source.accepted_at" type="date" class="form-control">
-                <div class="invalid-feedback"></div>
-              </div>
-            </div>
-            <!-- タイトル -->
-            <div class="row mb-3">
-              <label for="source-title" class="col-form-label col-2">タイトル</label>
-              <div class="col-10">
-                <input id="source-title" v-model="source.title" type="text" class="form-control">
-                <div class="invalid-feedback"></div>
-              </div>
-            </div>
-            <!-- 問い合わせ内容（テキストエリア） -->
-            <div class="row mb-3">
-              <label for="source-description" class="col-form-label col-2">問い合わせ内容</label>
-              <div class="col-10">
-                <textarea id="source-description" v-model="source.description" class="form-control" rows="5"></textarea>
-                <div class="invalid-feedback"></div>
-              </div>
-            </div>
             <div class="row mb-3">
               <div class="accordion accordion-flush">
+                <!-----------------------------
+                基本セクション
+                ------------------------------>
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#source-1" aria-expanded="true" aria-controls="source-1">
+                      基本
+                    </button>
+                  </h2>
+                  <div id="source-1" class="accordion-collapse collapse show">
+                    <div class="accordion-body">
+                      <!-- 管理番号（自動採番） -->
+                      <div class="row mb-3">
+                        <label for="source-no" class="col-form-label col-2">管理番号</label>
+                        <div class="col-10">
+                          <input id="source-no" v-model="source.no" type="text" class="form-control" maxlength="20" required style="width: 20em; flex: none;">
+                          <div class="invalid-feedback"></div>
+                        </div>
+                      </div>
+                      <!-- 重複元管理番号 -->
+                      <div class="row mb-3">
+                        <label for="source-reference_no" class="col-form-label col-2">重複元管理番号</label>
+                        <div class="col-10">
+                          <input id="source-reference_no" v-model="source.reference_no" type="text" class="form-control" maxlength="20" style="width: 20em; flex: none;">
+                          <div class="invalid-feedback"></div>
+                        </div>
+                      </div>
+                      <!-- 顧客担当者 -->
+                      <div class="row mb-3">
+                        <label for="source-requested_by" class="col-form-label col-2">顧客担当者</label>
+                        <div class="col-10">
+                          <input id="source-requested_by" v-model="source.requested_by" type="text" class="form-control">
+                          <div class="invalid-feedback"></div>
+                        </div>
+                      </div>
+                      <!-- 受付担当者 -->
+                      <div class="row mb-3">
+                        <label for="source-accepted_by" class="col-form-label col-2">受付担当者</label>
+                        <div class="col-10">
+                          <input id="source-accepted_by" v-model="source.accepted_by" type="text" class="form-control">
+                          <div class="invalid-feedback"></div>
+                        </div>
+                      </div>
+                      <!-- 受付日（カレンダー） -->
+                      <div class="row mb-3">
+                        <label for="source-accepted_at" class="col-form-label col-2">受付日</label>
+                        <div class="col-10">
+                          <input id="source-accepted_at" v-model="source.accepted_at" type="date" class="form-control">
+                          <div class="invalid-feedback"></div>
+                        </div>
+                      </div>
+                      <!-- タイトル -->
+                      <div class="row mb-3">
+                        <label for="source-title" class="col-form-label col-2">タイトル</label>
+                        <div class="col-10">
+                          <input id="source-title" v-model="source.title" type="text" class="form-control">
+                          <div class="invalid-feedback"></div>
+                        </div>
+                      </div>
+                      <!-- 問い合わせ内容（テキストエリア） -->
+                      <div class="row mb-3">
+                        <label for="source-description" class="col-form-label col-2">問い合わせ内容</label>
+                        <div class="col-10">
+                          <textarea id="source-description" v-model="source.description" class="form-control" rows="5"></textarea>
+                          <div class="invalid-feedback"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <!-----------------------------
                 ステータスセクション
                 ------------------------------>
                 <div class="accordion-item">
                   <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group2" aria-expanded="false" aria-controls="group2">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#source-2" aria-expanded="false" aria-controls="source-2">
                       ステータス
                     </button>
                   </h2>
-                  <div id="group2" class="accordion-collapse collapse">
+                  <div id="source-2" class="accordion-collapse collapse">
                     <div class="accordion-body">
                       <!-- 進捗状況（SELECT） -->
                       <div class="row mb-3">
@@ -355,11 +383,11 @@
                 ------------------------------>
                 <div class="accordion-item">
                   <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group1" aria-expanded="false" aria-controls="group1">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#source-3" aria-expanded="false" aria-controls="source-3">
                       詳細内容
                     </button>
                   </h2>
-                  <div id="group1" class="accordion-collapse collapse">
+                  <div id="source-3" class="accordion-collapse collapse">
                     <div class="accordion-body">
                       <!-- 調査内容（テキストエリア） -->
                       <div class="row mb-3">
@@ -397,11 +425,11 @@
                 ------------------------------>
                 <div class="accordion-item">
                   <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group3" aria-expanded="false" aria-controls="group3">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#source-4" aria-expanded="false" aria-controls="source-4">
                       作業明細
                     </button>
                   </h2>
-                  <div id="group3" class="accordion-collapse collapse">
+                  <div id="source-4" class="accordion-collapse collapse">
                     <div class="accordion-body">
                       <!-- 担当者、対応時間リスト -->
                       <div class="row mb-3">
@@ -432,11 +460,11 @@
                 ------------------------------>
                 <div class="accordion-item">
                   <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group4" aria-expanded="false" aria-controls="group3">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#source-5" aria-expanded="false" aria-controls="source-5">
                       精算
                     </button>
                   </h2>
-                  <div id="group4" class="accordion-collapse collapse">
+                  <div id="source-5" class="accordion-collapse collapse">
                     <div class="accordion-body">
                       <!-- 合計対応時間 -->
                       <div class="row mb-3">
