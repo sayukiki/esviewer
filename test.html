@@ -364,15 +364,17 @@
                             <thead class="table-light">
                               <tr>
                                 <th>タグ</th>
+                                <th></th>
                               </tr>
                             </thead>
                             <tbody>
-                              <tr v-for="tag in source.tags">
+                              <tr v-for="(tag, index) in source.tags" :key="index">
                                 <td><input v-model="tag.name" type="text" class="form-control"></td>
+                                <td><button  @click="source.tags.splice(index, 1)" type="button" class="btn btn-link">削除</button></td>
                               </tr>
                             </tbody>
                           </table>
-                          <button @click="(source.tags ??= []).push({})"  type="button" class="btn btn-link">行追加</button>
+                          <button @click="(source.tags ??= []).push({})" type="button" class="btn btn-link">行追加</button>
                         </div>
                       </div>
                     </div>
@@ -440,16 +442,18 @@
                               <tr>
                                 <th>担当者</th>
                                 <th>対応時間</th>
+                                <th></th>
                               </tr>
                             </thead>
                             <tbody>
-                              <tr v-for="task in source.tasks">
+                              <tr v-for="(task, index) in source.tasks" :key="index">
                                 <td><input v-model="task.handled_by" type="text" class="form-control"></td>
                                 <td><input v-model="task.handled_effort_time" type="date" class="form-control"></td>
+                                <td><button  @click="source.tasks.splice(index, 1)" type="button" class="btn btn-link">削除</button></td>
                               </tr>
                             </tbody>
                           </table>
-                          <button @click="(source.tasks ??= []).push({})"  type="button" class="btn btn-link">行追加</button>
+                          <button @click="(source.tasks ??= []).push({})" type="button" class="btn btn-link">行追加</button>
                         </div>
                       </div>
                     </div>
