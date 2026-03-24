@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>問い合わせ検索</title>
+  <link href="https://unpkg.com/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+
+<body>
+  <div id="app" class="container">
+    <h1 class="mt-3">問い合わせ検索</h1>
+
+    <div class="row mb-3">
+      <div class="row">
+        <div class="col-12">
+          <div class="alert alert-primary" role="alert" v-show="successMessage">{{ successMessage }}</div>
+          <div class="alert alert-danger" role="alert" v-show="errorMessage">{{ errorMessage }}</div>
+        </div>
+      </div>
+
+      <!-----------------------------
+      検索モード
+      ------------------------------>
+      <div v-if="!isEditMode" class="col-12">
+        <!-----------------------------
+        検索セクション
+        ------------------------------>
+        <form class="card mb-3" @focusout="validate" ref="filterForm">
+          <div class="card-body">
+            <!-- 全文検索（部分） -->
+            <div class="row mb-3">
+              <label for="filter-text" class="col-form-label col-2">全文検索</label>
+              <div class="col-10">
+                <input id="filter-text" v-model="filter.text" type="text" class="form-control">
+              </div>
+            </div>
+            <!-- 管理番号（完全） -->
+            <div class="row mb-3">
+              <label for="filter-no" class="col-form-label col-2">管理番号</label>
+              <div class="col-10">
+                <input id="filter-no" v-model="filter.no" type="text" class="form-control" style="width: 20em; flex: none;">
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="accordion accordion-flush">
+                <!-----------------------------
+                詳細条件セクション
+                ------------------------------>
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group0" aria-expanded="false" aria-controls="group1">
+                      詳細条件
+                    </button>
+                  </h2>
+                  <div id="group0" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                      <!-- タイトル（部分） -->
+                      <div class="row mb-3">
+                        <label for="filter-title" class="col-form-label col-2">タイトル</label>
+                        <div class="col-10">
+                          <input id="filter-title" v-model="filter.title" type="text" class="form-control">
+                        </div>
+                      </div>
+                      <!-- 受付日（FROMTO、カレンダー） -->
+                      <div class="row mb-3">
+                        <label for="filter-accepted_at" class="col-form-label col-2">受付日</label>
+                        <div class="col-10">
+                          <div class="input-group">
+                            <input id="filter-accepted_at" v-model="filter.accepted_at_from" type="date" class="form-control" style="width: 10em; flex: none;">
+                            <span class="input-group-text">〜</span>
+                            <input v-model="filter.accepted_at_to" type="date" class="form-control" style="width: 10em; flex: none;">
+                          </div>
+                        </div>
+                      </div>
+                      <!-- 完了日（FROMTO、カレンダー）、未完了のみ（CHECK） -->
+                      <div class="row mb-3">
+                        <label for="filter-closed_at" class="col-form-label col-2">完了日</label>
+                        <div class="col-10">
+                          <div class="input-group">
+                            <input id="filter-closed_at" v-model="filter.closed_at_from" type="date" class="form-control" style="width: 10em; flex: none;">
+                            <span class="input-group-text">〜</span>
+                            <input v-model="filter.closed_at_to" type="date" class="form-control" style="width: 10em; flex: none;">
+                            <input id="filter-exclude_closed" v-model="filter.exclude_closed" type="checkbox" class="btn-check" autocomplete="off">
+                            <label for="filter-exclude_closed" class="btn btn-outline-primary">未完了のみ</label>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- 精算月（完全）、未精算のみ（CHECK）、未精算含む（CHECK） -->
+                      <div class="row mb-3">
+                        <label for="filter-settlement_month" class="col-form-label col-2">精算月</label>
+                        <div class="col-10">
+                          <div class="input-group">
+                            <input id="filter-settlement_month" v-model="filter.settlement_month" type="month" class="form-control" style="width: 10em; flex: none;">
+                            <input id="filter-only_unsettled" v-model="filter.only_unsettled" type="checkbox" class="btn-check" autocomplete="off">
+                            <label for="filter-only_unsettled" class="btn btn-outline-primary">未精算のみ</label>
+                            <input id="filter-include_unsettled" v-model="filter.include_unsettled" type="checkbox" class="btn-check" autocomplete="off">
+                            <label for="filter-include_unsettled" class="btn btn-outline-primary">未精算含む</label>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- 顧客担当者（部分） -->
+                      <div class="row mb-3">
+                        <label for="filter-requested_by" class="col-form-label col-2">顧客担当者</label>
+                        <div class="col-10">
+                          <input id="filter-requested_by" v-model="filter.requested_by" type="text" class="form-control" style="width: 20em; flex: none;">
+                        </div>
+                      </div>
+                      <!-- 受付担当者（部分） -->
+                      <div class="row mb-3">
+                        <label for="filter-accepted_by" class="col-form-label col-2">受付担当者</label>
+                        <div class="col-10">
+                          <input id="filter-accepted_by" v-model="filter.accepted_by" type="text" class="form-control" style="width: 20em; flex: none;">
+                        </div>
+                      </div>
+                      <!-- 障害発生予定（部分） -->
+                      <div class="row mb-3">
+                        <label for="filter-next_incident_prediction" class="col-form-label col-2">障害発生予定</label>
+                        <div class="col-10">
+                          <input id="filter-next_incident_prediction" v-model="filter.next_incident_prediction" type="text" class="form-control">
+                        </div>
+                      </div>
+                      <!-- 発生業務リスト（CHECK） -->
+                      <div class="row mb-3">
+                        <label for="filter-business_category" class="col-form-label col-2">発生業務</label>
+                        <div class="col-10">
+                          <div class="btn-group" role="group">
+                            <input id="filter-business_category-1" v-model="filter.business_category" type="checkbox" class="btn-check" autocomplete="off" value="販売">
+                            <label for="filter-business_category-1" class="btn btn-outline-primary">販売</label>
+                            <input id="filter-business_category-2" v-model="filter.business_category" type="checkbox" class="btn-check" autocomplete="off" value="購買">
+                            <label for="filter-business_category-2" class="btn btn-outline-primary">購買</label>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- 担当者（部分） -->
+                      <div class="row mb-3">
+                        <label for="filter-handled_by" class="col-form-label col-2">担当者</label>
+                        <div class="col-10">
+                          <input id="filter-handled_by" v-model="filter.handled_by" type="text" class="form-control" style="width: 20em; flex: none;">
+                        </div>
+                      </div>
+                      <!-- 進捗状況リスト（CHECK） -->
+                      <div class="row mb-3">
+                        <label for="filter-status" class="col-form-label col-2">進捗状況</label>
+                        <div class="col-10">
+                          <div class="btn-group" role="group">
+                            <input id="filter-status-1" v-model="filter.status" type="checkbox" class="btn-check" autocomplete="off" value="受付">
+                            <label for="filter-status-1" class="btn btn-outline-primary">受付</label>
+                            <input id="filter-status-2" v-model="filter.status" type="checkbox" class="btn-check" autocomplete="off" value="対応中">
+                            <label for="filter-status-2" class="btn btn-outline-primary">対応中</label>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- タグ１リスト（CHECK） -->
+                      <!-- タグ２リスト（CHECK） -->
+                      <!-- タグ３リスト（CHECK） -->
+                      <!-- タグ（完全、参照ボタン） -->
+                      <div class="row mb-3">
+                        <label for="filter-tag" class="col-form-label col-2">タグ</label>
+                        <div class="col-10">
+                          <input id="filter-tag" v-model="filter.tag" type="text" class="form-control" style="width: 20em; flex: none;">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-12 d-flex justify-content-end">
+                <button type="button" class="btn btn-primary me-3" :disabled="isLoading" @click="openCreateMode">新規</button>
+                <button type="button" class="btn btn-primary" :disabled="isLoading" @click="search">検索</button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <!-----------------------------
+        検索結果セクション
+        ------------------------------>
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>管理番号</th>
+              <th>タイトル</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in items" :key="item._id" @click="openUpdateMode(item._id)">
+              <td>{{ item._source.no }}</td>
+              <td>{{ item._source.title }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-----------------------------
+      編集モード
+      ------------------------------>
+      <div v-if="isEditMode" class="col-12">
+        <form class="card" @focusout="validate" ref="sourceForm">
+          <div class="card-body">
+            <!-- 管理番号（自動採番） -->
+            <div class="row mb-3">
+              <label for="source-no" class="col-form-label col-2">管理番号</label>
+              <div class="col-10">
+                <input id="source-no" v-model="source.no" type="text" class="form-control" maxlength="20" required style="width: 20em; flex: none;">
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <!-- 重複元管理番号 -->
+            <div class="row mb-3">
+              <label for="source-reference_no" class="col-form-label col-2">重複元管理番号</label>
+              <div class="col-10">
+                <input id="source-reference_no" v-model="source.reference_no" type="text" class="form-control" maxlength="20" style="width: 20em; flex: none;">
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <!-- 顧客担当者 -->
+            <div class="row mb-3">
+              <label for="source-requested_by" class="col-form-label col-2">顧客担当者</label>
+              <div class="col-10">
+                <input id="source-requested_by" v-model="source.requested_by" type="text" class="form-control">
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <!-- 受付担当者 -->
+            <div class="row mb-3">
+              <label for="source-accepted_by" class="col-form-label col-2">受付担当者</label>
+              <div class="col-10">
+                <input id="source-accepted_by" v-model="source.accepted_by" type="text" class="form-control">
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <!-- 受付日（カレンダー） -->
+            <div class="row mb-3">
+              <label for="source-accepted_at" class="col-form-label col-2">受付日</label>
+              <div class="col-10">
+                <input id="source-accepted_at" v-model="source.accepted_at" type="date" class="form-control">
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <!-- タイトル -->
+            <div class="row mb-3">
+              <label for="source-title" class="col-form-label col-2">タイトル</label>
+              <div class="col-10">
+                <input id="source-title" v-model="source.title" type="text" class="form-control">
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <!-- 問い合わせ内容（テキストエリア） -->
+            <div class="row mb-3">
+              <label for="source-description" class="col-form-label col-2">問い合わせ内容</label>
+              <div class="col-10">
+                <textarea id="source-description" v-model="source.description" class="form-control" rows="5"></textarea>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="accordion accordion-flush">
+                <!-----------------------------
+                ステータスセクション
+                ------------------------------>
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group2" aria-expanded="false" aria-controls="group2">
+                      ステータス
+                    </button>
+                  </h2>
+                  <div id="group2" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                      <!-- 進捗状況（SELECT） -->
+                      <div class="row mb-3">
+                        <label for="source-status" class="col-form-label col-2">進捗状況</label>
+                        <div class="col-10">
+                          <select id="source-status" v-model="source.status" class="form-select">
+                            <option value="受付">受付</option>
+                            <option value="対応中">対応中</option>
+                          </select>
+                        </div>
+                      </div>
+                      <!-- 対応区分（SELECT） -->
+                      <div class="row mb-3">
+                        <label for="source-support_category" class="col-form-label col-2">対応区分</label>
+                        <div class="col-10">
+                          <select id="source-support_category" v-model="source.support_category" class="form-select">
+                            <option value="障害">障害</option>
+                            <option value="支援">支援</option>
+                          </select>
+                        </div>
+                      </div>
+                      <!-- 発生業務（SELECT） -->
+                      <div class="row mb-3">
+                        <label for="source-business_category" class="col-form-label col-2">発生業務</label>
+                        <div class="col-10">
+                          <select id="source-business_category" v-model="source.business_category" class="form-select">
+                            <option value="販売">販売</option>
+                            <option value="購買">購買</option>
+                          </select>
+                        </div>
+                      </div>
+                      <!-- テスト結果提出日（カレンダー） -->
+                      <div class="row mb-3">
+                        <label for="source-test_result_submitted_at" class="col-form-label col-2">テスト結果提出日</label>
+                        <div class="col-10">
+                          <input id="source-test_result_submitted_at" v-model="source.test_result_submitted_at" type="date" class="form-control">
+                        </div>
+                      </div>
+                      <!-- テスト結果受領日（カレンダー） -->
+                      <div class="row mb-3">
+                        <label for="source-test_result_received_at" class="col-form-label col-2">テスト結果受領日</label>
+                        <div class="col-10">
+                          <input id="source-test_result_received_at" v-model="source.test_result_received_at" type="date" class="form-control">
+                        </div>
+                      </div>
+                      <!-- リリース日（カレンダー） -->
+                      <div class="row mb-3">
+                        <label for="source-released_at" class="col-form-label col-2">リリース日</label>
+                        <div class="col-10">
+                          <input id="source-released_at" v-model="source.released_at" type="date" class="form-control">
+                        </div>
+                      </div>
+                      <!-- 完了日（カレンダー） -->
+                      <div class="row mb-3">
+                        <label for="source-closed_at" class="col-form-label col-2">完了日</label>
+                        <div class="col-10">
+                          <input id="source-closed_at" v-model="source.closed_at" type="date" class="form-control">
+                        </div>
+                      </div>
+                      <!-- タグリスト -->
+                      <div class="row mb-3">
+                        <label for="source-tags" class="col-form-label col-2">タグ</label>
+                        <div class="col-10">
+                          <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                              <tr>
+                                <th>タグ</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr v-for="tag in source.tags">
+                                <td><input v-model="tag.name" type="text" class="form-control"></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          <button @click="(source.tags ??= []).push({})"  type="button" class="btn btn-link">行追加</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-----------------------------
+                詳細内容セクション
+                ------------------------------>
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group1" aria-expanded="false" aria-controls="group1">
+                      詳細内容
+                    </button>
+                  </h2>
+                  <div id="group1" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                      <!-- 調査内容（テキストエリア） -->
+                      <div class="row mb-3">
+                        <label for="source-investigation_content" class="col-form-label col-2">調査内容</label>
+                        <div class="col-10">
+                          <textarea id="source-investigation_content" v-model="source.investigation_content" class="form-control" rows="5"></textarea>
+                        </div>
+                      </div>
+                      <!-- 実施内容（テキストエリア） -->
+                      <div class="row mb-3">
+                        <label for="source-resolution_content" class="col-form-label col-2">実施内容</label>
+                        <div class="col-10">
+                          <textarea id="source-resolution_content" v-model="source.resolution_content" class="form-control" rows="5"></textarea>
+                        </div>
+                      </div>
+                      <!-- メモ -->
+                      <div class="row mb-3">
+                        <label for="source-memo" class="col-form-label col-2">メモ</label>
+                        <div class="col-10">
+                          <textarea id="source-memo" v-model="source.memo" class="form-control" rows="5"></textarea>
+                        </div>
+                      </div>
+                      <!-- 次回障害発生予定 -->
+                      <div class="row mb-3">
+                        <label for="source-next_incident_prediction" class="col-form-label col-2">次回障害発生予定</label>
+                        <div class="col-10">
+                          <textarea id="source-next_incident_prediction" v-model="source.next_incident_prediction" class="form-control" rows="5"></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-----------------------------
+                作業明細セクション
+                ------------------------------>
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group3" aria-expanded="false" aria-controls="group3">
+                      作業明細
+                    </button>
+                  </h2>
+                  <div id="group3" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                      <!-- 担当者、対応時間リスト -->
+                      <div class="row mb-3">
+                        <label for="source-tasks" class="col-form-label col-2">担当者</label>
+                        <div class="col-10">
+                          <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                              <tr>
+                                <th>担当者</th>
+                                <th>対応時間</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr v-for="task in source.tasks">
+                                <td><input v-model="task.handled_by" type="text" class="form-control"></td>
+                                <td><input v-model="task.handled_effort_time" type="date" class="form-control"></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          <button @click="(source.tasks ??= []).push({})"  type="button" class="btn btn-link">行追加</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-----------------------------
+                精算セクション
+                ------------------------------>
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#group4" aria-expanded="false" aria-controls="group3">
+                      精算
+                    </button>
+                  </h2>
+                  <div id="group4" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                      <!-- 合計対応時間 -->
+                      <div class="row mb-3">
+                        <label for="source-total_effort_time" class="col-form-label col-2">合計対応時間</label>
+                        <div class="col-10">
+                          <input id="source-total_effort_time" v-model="source.total_effort_time" type="number" class="form-control">
+                        </div>
+                      </div>
+                      <!-- 支援対応時間 -->
+                      <div class="row mb-3">
+                        <label for="source-support_effort_time" class="col-form-label col-2">支援対応時間</label>
+                        <div class="col-10">
+                          <input id="source-support_effort_time" v-model="source.support_effort_time" type="number" class="form-control">
+                        </div>
+                      </div>
+                      <!-- 障害対応時間 -->
+                      <div class="row mb-3">
+                        <label for="source-incident_effort_time" class="col-form-label col-2">障害対応時間</label>
+                        <div class="col-10">
+                          <input id="source-incident_effort_time" v-model="source.incident_effort_time" type="number" class="form-control">
+                        </div>
+                      </div>
+                      <!-- 精算月 -->
+                      <div class="row mb-3">
+                        <label for="source-settlement_month" class="col-form-label col-2">精算月</label>
+                        <div class="col-10">
+                          <input id="source-settlement_month" v-model="source.settlement_month" type="month" class="form-control">
+                        </div>
+                      </div>
+                      <!-- コメント１ -->
+                      <div class="row mb-3">
+                        <label for="source-comment1" class="col-form-label col-2">コメント１</label>
+                        <div class="col-10">
+                          <textarea id="source-comment1" v-model="source.comment1" class="form-control" rows="5"></textarea>
+                        </div>
+                      </div>
+                      <!-- コメント２ -->
+                      <div class="row mb-3">
+                        <label for="source-comment2" class="col-form-label col-2">コメント２</label>
+                        <div class="col-10">
+                          <textarea id="source-comment2" v-model="source.comment2" class="form-control" rows="5"></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-12 d-flex justify-content-end">
+                <button @click="openSearchMode" type="button" :disabled="isLoading" class="btn btn-secondary me-3">戻る</button>
+                <button @click="remove" type="button" :disabled="isLoading || !selectedId" class="btn btn-danger me-3">削除</button>
+                <button @click="create" type="button" :disabled="isLoading" class="btn btn-primary me-3">登録</button>
+                <button @click="update" type="button" :disabled="isLoading || !selectedId" class="btn btn-primary">更新</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, nextTick } = Vue;
+    const ES_INDEX = 'test2';
+    const ES_URL = `http://localhost:9200/${ES_INDEX}`;
+
+    createApp({
+      setup() {
+        //-----------------------------
+        // 検索条件
+        //-----------------------------
+        const filter = ref({
+          text: null,
+          no: null,
+          title: null,
+          accepted_at_from: null,
+          accepted_at_to: null,
+          closed_at_from: null,
+          closed_at_to: null,
+          exclude_closed: null,
+          settlement_month: null,
+          only_unsettled: null,
+          include_unsettled: null,
+          requested_by: null,
+          accepted_by: null,
+          next_incident_prediction: null,
+          business_category: [],
+          handled_by: null,
+          status: [],
+          tag: null,
+        });
+        const buildFilter = () => {
+          const body = {
+            query: {
+              bool: {
+                filter: [],
+                must: []
+              }
+            }
+          };
+          if(!!filter.value.text) {
+            body.query.bool.must.push({
+              simple_query_string: {
+                query: filter.value.text,
+                fields: [
+                  'title',
+                  'description',
+                  'investigation_content',
+                  'resolution_content',
+                  'memo',
+                  'next_incident_prediction'
+                ]
+              }
+            });
+          }
+          if(!!filter.value.no) {
+            body.query.bool.filter.push({
+              term: {
+                no: filter.value.no
+              }
+            });
+          }
+          if(!!filter.value.title) {
+            body.query.bool.filter.push({
+              match: {
+                title: filter.value.title
+              }
+            });
+          }
+          if(!!filter.value.accepted_at_from || !!filter.value.accepted_at_to) {
+            body.query.bool.filter.push({
+              range: {
+                accepted_at: {
+                  gte: !!filter.value.accepted_at_from ? filter.value.accepted_at_from : null,
+                  lte: !!filter.value.accepted_at_to ? filter.value.accepted_at_to : null
+                }
+              }
+            });
+          }
+          if(!!filter.value.closed_at_from || !!filter.value.closed_at_to) {
+            body.query.bool.filter.push({
+              range: {
+                closed_at: {
+                  gte: !!filter.value.closed_at_from ? filter.value.closed_at_from : null,
+                  lte: !!filter.value.closed_at_to ? filter.value.closed_at_to : null
+                }
+              }
+            });
+          }
+          if(filter.value.exclude_closed){
+            body.query.bool.filter.push({
+              bool: {
+                must_not: {
+                  exists: {
+                    field: 'closed_at'
+                  }
+                }
+              }
+            });
+          }
+          return body;
+        }
+
+        //-----------------------------
+        // 変数
+        //-----------------------------
+        const isEditMode = ref(false);
+        const isLoading = ref(false);
+        const selectedId = ref(null);
+        const selectedSeqNo = ref(null);
+        const selectedPrimaryTerm = ref(null);
+        const successMessage = ref(null);
+        const errorMessage = ref(null);
+        const filterForm = ref(null);
+        const sourceForm = ref(null);
+        const items = ref([]);
+        const source = ref({});
+
+        //-----------------------------
+        // 検索
+        //-----------------------------
+        const search = async () => {
+          if (isLoading.value) {
+            alert('ダブルクリック禁止');
+            return;
+          }
+          isLoading.value = true;
+          successMessage.value = null;
+          errorMessage.value = null;
+          try {
+            if (!filterForm.value.checkValidity()) {
+              return;
+            }
+            const url = `${ES_URL}/_search`;
+            const method = 'POST';
+            const body = buildFilter();
+            const res = await fetch(url, {
+              method: method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            window.scrollTo({top: 0, behavior: 'auto'});
+            if (res.status >= 400) {
+              errorMessage.value = 'エラーが発生しました。';
+            } else {
+              const data = await res.json();
+              items.value = data.hits ? data.hits.hits : [];
+            }
+          } finally {
+            await sleep(1000);
+            isLoading.value = false;
+          }
+        };
+
+        //-----------------------------
+        // 更新
+        //-----------------------------
+        const update = async () => {
+          if (isLoading.value) {
+            alert('ダブルクリック禁止');
+            return;
+          }
+          isLoading.value = true;
+          successMessage.value = null;
+          errorMessage.value = null;
+          try {
+            if (!sourceForm.value.checkValidity()) {
+              return;
+            }
+            const url = `${ES_URL}/_doc/${selectedId.value}?if_seq_no=${selectedSeqNo.value}&if_primary_term=${selectedPrimaryTerm.value}&refresh=wait_for`;
+            const method = 'PUT';
+            const body = source.value;
+            const res = await fetch(url, {
+              method: method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            window.scrollTo({top: 0, behavior: 'auto'});
+            if (res.status == 409) {
+              errorMessage.value = '更新されています。';
+            } else if (res.status >= 400) {
+              errorMessage.value = 'エラーが発生しました。';
+            } else {
+              const data = await res.json();
+              selectedId.value = data._id;
+              selectedSeqNo.value = data._seq_no;
+              selectedPrimaryTerm.value = data._primary_term;
+              successMessage.value = '更新しました。';
+            }
+          } finally {
+            await sleep(1000);
+            isLoading.value = false;
+          }
+        };
+
+        //-----------------------------
+        // 登録
+        //-----------------------------
+        const create = async () => {
+          if (isLoading.value) {
+            alert('ダブルクリック禁止');
+            return;
+          }
+          isLoading.value = true;
+          successMessage.value = null;
+          errorMessage.value = null;
+          try {
+            if (!sourceForm.value.checkValidity()) {
+              validateAll();
+              return;
+            }
+            const url = `${ES_URL}/_doc`;
+            const method = 'POST';
+            const body = source.value;
+            const res = await fetch(url, {
+              method: method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            window.scrollTo({top: 0, behavior: 'auto'});
+            if (res.status >= 400) {
+              errorMessage.value = 'エラーが発生しました。';
+            } else {
+              const data = await res.json();
+              selectedId.value = data._id;
+              selectedSeqNo.value = data._seq_no;
+              selectedPrimaryTerm.value = data._primary_term;
+              successMessage.value = '登録しました。';
+            }
+          } finally {
+            await sleep(1000);
+            isLoading.value = false;
+          }
+        };
+
+        //-----------------------------
+        // 削除
+        //-----------------------------
+        const remove = async () => {
+          if (isLoading.value) {
+            alert('ダブルクリック禁止');
+            return;
+          }
+          isLoading.value = true;
+          successMessage.value = null;
+          errorMessage.value = null;
+          try {
+            const url = `${ES_URL}/_doc/${selectedId.value}?if_seq_no=${selectedSeqNo.value}&if_primary_term=${selectedPrimaryTerm.value}&refresh=wait_for`;
+            const method = 'DELETE';
+            const res = await fetch(url, {
+              method: method,
+              headers: { 'Content-Type': 'application/json' },
+            });
+            window.scrollTo({top: 0, behavior: 'auto'});
+            if (res.status == 409) {
+              errorMessage.value = '更新されています。';
+            } else if (res.status >= 400) {
+              errorMessage.value = 'エラーが発生しました。';
+            } else {
+              selectedId.value = null;
+              selectedSeqNo.value = null;
+              selectedPrimaryTerm.value = null;
+              successMessage.value = '削除しました。';
+            }
+          } finally {
+            await sleep(1000);
+            isLoading.value = false;
+          }
+        };
+
+        //-----------------------------
+        // 検索へ遷移
+        //-----------------------------
+        const openSearchMode = async () => {
+          if (isLoading.value) {
+            alert('ダブルクリック禁止');
+            return;
+          }
+          try {
+            window.scrollTo({top: 0, behavior: 'auto'});
+            source.value = {};
+            selectedId.value = null;
+            selectedSeqNo.value = null;
+            selectedPrimaryTerm.value = null;
+            isEditMode.value = false;
+            await nextTick();
+            await search();
+          } finally {
+          }
+        };
+
+        //-----------------------------
+        // 更新へ遷移
+        //-----------------------------
+        const openUpdateMode = async (id) => {
+          if (isLoading.value) {
+            alert('ダブルクリック禁止');
+            return;
+          }
+          isLoading.value = true;
+          successMessage.value = null;
+          errorMessage.value = null;
+          try {
+            const url = `${ES_URL}/_doc/${id}?`;
+            const method = 'GET';
+            const res = await fetch(url, {
+              method: method,
+              headers: { 'Content-Type': 'application/json' },
+            });
+            window.scrollTo({top: 0, behavior: 'auto'});
+            const data = await res.json();
+            source.value = data._source;
+            selectedId.value = data._id;
+            selectedSeqNo.value = data._seq_no;
+            selectedPrimaryTerm.value = data._primary_term;
+            isEditMode.value = true;
+          } finally {
+            await sleep(1000);
+            isLoading.value = false;
+          }
+        };
+
+        //-----------------------------
+        // 登録へ遷移
+        //-----------------------------
+        const openCreateMode = async () => {
+          if (isLoading.value) {
+            alert('ダブルクリック禁止');
+            return;
+          }
+          isLoading.value = true;
+          successMessage.value = null;
+          errorMessage.value = null;
+          try {
+            window.scrollTo({top: 0, behavior: 'auto'});
+            source.value = {};
+            selectedId.value = null;
+            selectedSeqNo.value = null;
+            selectedPrimaryTerm.value = null;
+            isEditMode.value = true;
+          } finally {
+            await sleep(1000);
+            isLoading.value = false;
+          }
+        };
+
+        //-----------------------------
+        // バリデーション
+        //-----------------------------
+        const validate = (event) => {
+          validateTarget(event.target);
+        };
+        const validateAll = () => {
+          const inputs = sourceForm.value.querySelectorAll('.form-control, .form-select, .form-check');
+          Array.from(inputs).forEach(target => {
+            validateTarget(target);
+          });
+        };
+        const validateTarget = (target) => {
+          const feedback = target.parentElement.querySelector('.invalid-feedback');
+          if (!target.checkValidity()) {
+            target.classList.add('is-invalid');
+            if (feedback) {
+              feedback.textContent = target.validationMessage;
+            }
+          } else {
+            target.classList.remove('is-invalid');
+            if (feedback) {
+              feedback.textContent = '';
+            }
+          }
+        };
+
+        //-----------------------------
+        // 共通関数
+        //-----------------------------
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        //-----------------------------
+        // 初期設定
+        //-----------------------------
+        onMounted(async () => await search());
+
+        return {
+          isEditMode, isLoading,
+          selectedId, selectedSeqNo, selectedPrimaryTerm,
+          successMessage, errorMessage,
+          filterForm, sourceForm,
+          filter, items, source,
+          openUpdateMode, openCreateMode, openSearchMode, 
+          search, update, create, remove,
+          validate,
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
