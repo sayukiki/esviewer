@@ -7,3 +7,4 @@ ENV http.cors.allow-origin='"*"'
 ENV network.host=0.0.0.0
 ENV http.port=9200
 ENV xpack.security.enabled=false
+ENV bootstrap.memory_lock=false
