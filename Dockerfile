@@ -1,10 +1,6 @@
 FROM docker.elastic.co/elasticsearch/elasticsearch:9.3.1
+
 RUN bin/elasticsearch-plugin install analysis-icu analysis-kuromoji
-ENV ES_JAVA_OPTS="-Xms512m -Xmx512m"
-ENV discovery.type=single-node
-ENV http.cors.enabled=true
-ENV http.cors.allow-origin='"*"'
-ENV network.host=0.0.0.0
-ENV http.port=9200
-ENV xpack.security.enabled=false
-ENV bootstrap.memory_lock=false
+
+COPY config/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+COPY config/jvm.options /usr/share/elasticsearch/config/jvm.options.d/jvm.options
