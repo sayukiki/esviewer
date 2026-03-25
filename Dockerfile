@@ -4,4 +4,6 @@ ENV ES_JAVA_OPTS="-Xms512m -Xmx512m"
 ENV discovery.type=single-node
 ENV http.cors.enabled=true
 ENV http.cors.allow-origin='"*"'
+ENV network.host=0.0.0.0
+ENV http.port=9200
 ENV xpack.security.enabled=false
