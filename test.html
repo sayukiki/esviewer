@@ -6,6 +6,11 @@
   <link href="https://unpkg.com/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://unpkg.com/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+  .collapsing {
+    transition: none !important;
+  }
+  </style>
 </head>
 
 <body>
@@ -27,20 +32,20 @@
         <!-----------------------------
         検索セクション
         ------------------------------>
-        <form class="card mb-3" @focusout="validate" ref="filterForm">
+        <form class="card mb-3" @focusout="validate" ref="filterForm" id="filter-form">
           <div class="card-body">
-            <div class="row mb-3">
+            <div class="row">
               <div class="accordion accordion-flush">
                 <!-----------------------------
                 基本セクション
                 ------------------------------>
                 <div class="accordion-item">
                   <h2 class="accordion-header">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#filter-1" aria-expanded="true" aria-controls="filter-1">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#filter-1" aria-expanded="false" aria-controls="filter-1">
                       基本
                     </button>
                   </h2>
-                  <div id="filter-1" class="accordion-collapse collapse show">
+                  <div id="filter-1" class="accordion-collapse collapse">
                     <div class="accordion-body">
                       <!-- 全文検索（部分） -->
                       <div class="row mb-3">
@@ -170,7 +175,7 @@
                       <!-- タグ２リスト（CHECK） -->
                       <!-- タグ３リスト（CHECK） -->
                       <!-- タグ（完全、参照ボタン） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-tag" class="col-form-label col-2">タグ</label>
                         <div class="col-10">
                           <input id="filter-tag" v-model="filter.tag" type="text" class="form-control" style="width: 20em; flex: none;">
@@ -181,8 +186,11 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div class="card-footer">
             <div class="row">
               <div class="col-12 d-flex justify-content-end">
+                <button type="button" class="btn btn-primary me-3" :disabled="isLoading" @click="downloadCsv">CSV</button>
                 <button type="button" class="btn btn-primary me-3" :disabled="isLoading" @click="openCreateMode">新規</button>
                 <button type="button" class="btn btn-primary" :disabled="isLoading" @click="search">検索</button>
               </div>
@@ -193,7 +201,7 @@
         <!-----------------------------
         検索結果セクション
         ------------------------------>
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0" id="result-table">
           <thead class="table-light">
             <tr>
               <th>管理番号</th>
@@ -213,20 +221,20 @@
       編集モード
       ------------------------------>
       <div v-if="isEditMode" class="col-12">
-        <form class="card" @focusout="validate" ref="sourceForm">
+        <form class="card" @focusout="validate" ref="sourceForm" id="source-form">
           <div class="card-body">
-            <div class="row mb-3">
+            <div class="row">
               <div class="accordion accordion-flush">
                 <!-----------------------------
                 基本セクション
                 ------------------------------>
                 <div class="accordion-item">
                   <h2 class="accordion-header">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#source-1" aria-expanded="true" aria-controls="source-1">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#source-1" aria-expanded="false" aria-controls="source-1">
                       基本
                     </button>
                   </h2>
-                  <div id="source-1" class="accordion-collapse collapse show">
+                  <div id="source-1" class="accordion-collapse collapse">
                     <div class="accordion-body">
                       <!-- 管理番号（自動採番） -->
                       <div class="row mb-3">
@@ -302,10 +310,11 @@
                       <div class="row mb-3">
                         <label for="source-status" class="col-form-label col-2">進捗状況</label>
                         <div class="col-10">
-                          <select id="source-status" v-model="source.status" class="form-select">
+                          <select id="source-status" v-model="source.status" class="form-select" required>
                             <option value="受付">受付</option>
                             <option value="対応中">対応中</option>
                           </select>
+                          <div class="invalid-feedback"></div>
                         </div>
                       </div>
                       <!-- 対応区分（SELECT） -->
@@ -506,7 +515,7 @@
                         </div>
                       </div>
                       <!-- コメント２ -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-comment2" class="col-form-label col-2">コメント２</label>
                         <div class="col-10">
                           <textarea id="source-comment2" v-model="source.comment2" class="form-control" rows="5"></textarea>
@@ -517,6 +526,8 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div class="card-footer">
             <div class="row">
               <div class="col-12 d-flex justify-content-end">
                 <button @click="openSearchMode" type="button" :disabled="isLoading" class="btn btn-secondary me-3">戻る</button>
@@ -539,6 +550,9 @@
 
     createApp({
       setup() {
+        //---------------------------------------------------------------------
+        // カスタマイズ範囲
+        //---------------------------------------------------------------------
         //-----------------------------
         // 検索条件
         //-----------------------------
@@ -562,8 +576,13 @@
           status: [],
           tag: null,
         });
-        const buildFilter = () => {
+
+        //-----------------------------
+        // Elasticsearch検索クエリ
+        //-----------------------------
+        const buildQuery = () => {
           const body = {
+            size: 1000, 
             query: {
               bool: {
                 filter: [],
@@ -588,22 +607,22 @@
           }
           if(!!filter.value.no) {
             body.query.bool.filter.push({
-              term: {
-                no: filter.value.no
+              wildcard: {
+                'no.keyword': filter.value.no
               }
             });
           }
           if(!!filter.value.title) {
             body.query.bool.filter.push({
               match: {
-                title: filter.value.title
+                'title': filter.value.title
               }
             });
           }
           if(!!filter.value.accepted_at_from || !!filter.value.accepted_at_to) {
             body.query.bool.filter.push({
               range: {
-                accepted_at: {
+                'accepted_at': {
                   gte: !!filter.value.accepted_at_from ? filter.value.accepted_at_from : null,
                   lte: !!filter.value.accepted_at_to ? filter.value.accepted_at_to : null
                 }
@@ -613,7 +632,7 @@
           if(!!filter.value.closed_at_from || !!filter.value.closed_at_to) {
             body.query.bool.filter.push({
               range: {
-                closed_at: {
+                'closed_at': {
                   gte: !!filter.value.closed_at_from ? filter.value.closed_at_from : null,
                   lte: !!filter.value.closed_at_to ? filter.value.closed_at_to : null
                 }
@@ -635,8 +654,20 @@
         }
 
         //-----------------------------
-        // 変数
+        // CSVフィールド
         //-----------------------------
+        const csvFileds = [
+          ['管理番号', 'no'],
+          ['タイトル', 'title'],
+          ['問い合わせ内容', 'description'],
+        ]
+
+        //---------------------------------------------------------------------
+        // カスタマイズ範囲はここまで、以下は変更不要
+        //---------------------------------------------------------------------
+        //---------------------------------------------------------------------
+        // 変数
+        //---------------------------------------------------------------------
         const isEditMode = ref(false);
         const isLoading = ref(false);
         const selectedId = ref(null);
@@ -649,280 +680,348 @@
         const items = ref([]);
         const source = ref({});
 
-        //-----------------------------
-        // 検索
-        //-----------------------------
-        const search = async () => {
-          if (isLoading.value) {
-            alert('ダブルクリック禁止');
-            return;
-          }
-          isLoading.value = true;
-          successMessage.value = null;
-          errorMessage.value = null;
-          try {
-            if (!filterForm.value.checkValidity()) {
-              return;
-            }
-            const url = `${ES_URL}/_search`;
-            const method = 'POST';
-            const body = buildFilter();
-            const res = await fetch(url, {
-              method: method,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(body),
-            });
-            window.scrollTo({top: 0, behavior: 'auto'});
-            if (res.status >= 400) {
-              errorMessage.value = 'エラーが発生しました。';
-            } else {
-              const data = await res.json();
-              items.value = data.hits ? data.hits.hits : [];
-            }
-          } finally {
-            await sleep(1000);
-            isLoading.value = false;
-          }
-        };
-
-        //-----------------------------
-        // 更新
-        //-----------------------------
-        const update = async () => {
-          if (isLoading.value) {
-            alert('ダブルクリック禁止');
-            return;
-          }
-          isLoading.value = true;
-          successMessage.value = null;
-          errorMessage.value = null;
-          try {
-            if (!sourceForm.value.checkValidity()) {
-              return;
-            }
-            const url = `${ES_URL}/_doc/${selectedId.value}?if_seq_no=${selectedSeqNo.value}&if_primary_term=${selectedPrimaryTerm.value}&refresh=wait_for`;
-            const method = 'PUT';
-            const body = source.value;
-            const res = await fetch(url, {
-              method: method,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(body),
-            });
-            window.scrollTo({top: 0, behavior: 'auto'});
-            if (res.status == 409) {
-              errorMessage.value = '更新されています。';
-            } else if (res.status >= 400) {
-              errorMessage.value = 'エラーが発生しました。';
-            } else {
-              const data = await res.json();
-              selectedId.value = data._id;
-              selectedSeqNo.value = data._seq_no;
-              selectedPrimaryTerm.value = data._primary_term;
-              successMessage.value = '更新しました。';
-            }
-          } finally {
-            await sleep(1000);
-            isLoading.value = false;
-          }
-        };
-
-        //-----------------------------
-        // 登録
-        //-----------------------------
-        const create = async () => {
-          if (isLoading.value) {
-            alert('ダブルクリック禁止');
-            return;
-          }
-          isLoading.value = true;
-          successMessage.value = null;
-          errorMessage.value = null;
-          try {
-            if (!sourceForm.value.checkValidity()) {
-              validateAll();
-              return;
-            }
-            const url = `${ES_URL}/_doc`;
-            const method = 'POST';
-            const body = source.value;
-            const res = await fetch(url, {
-              method: method,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(body),
-            });
-            window.scrollTo({top: 0, behavior: 'auto'});
-            if (res.status >= 400) {
-              errorMessage.value = 'エラーが発生しました。';
-            } else {
-              const data = await res.json();
-              selectedId.value = data._id;
-              selectedSeqNo.value = data._seq_no;
-              selectedPrimaryTerm.value = data._primary_term;
-              successMessage.value = '登録しました。';
-            }
-          } finally {
-            await sleep(1000);
-            isLoading.value = false;
-          }
-        };
-
-        //-----------------------------
-        // 削除
-        //-----------------------------
-        const remove = async () => {
-          if (isLoading.value) {
-            alert('ダブルクリック禁止');
-            return;
-          }
-          isLoading.value = true;
-          successMessage.value = null;
-          errorMessage.value = null;
-          try {
-            const url = `${ES_URL}/_doc/${selectedId.value}?if_seq_no=${selectedSeqNo.value}&if_primary_term=${selectedPrimaryTerm.value}&refresh=wait_for`;
-            const method = 'DELETE';
-            const res = await fetch(url, {
-              method: method,
-              headers: { 'Content-Type': 'application/json' },
-            });
-            window.scrollTo({top: 0, behavior: 'auto'});
-            if (res.status == 409) {
-              errorMessage.value = '更新されています。';
-            } else if (res.status >= 400) {
-              errorMessage.value = 'エラーが発生しました。';
-            } else {
-              selectedId.value = null;
-              selectedSeqNo.value = null;
-              selectedPrimaryTerm.value = null;
-              successMessage.value = '削除しました。';
-            }
-          } finally {
-            await sleep(1000);
-            isLoading.value = false;
-          }
-        };
-
-        //-----------------------------
-        // 検索へ遷移
-        //-----------------------------
-        const openSearchMode = async () => {
-          if (isLoading.value) {
-            alert('ダブルクリック禁止');
-            return;
-          }
-          try {
-            window.scrollTo({top: 0, behavior: 'auto'});
-            source.value = {};
-            selectedId.value = null;
-            selectedSeqNo.value = null;
-            selectedPrimaryTerm.value = null;
-            isEditMode.value = false;
-            await nextTick();
-            await search();
-          } finally {
-          }
-        };
-
-        //-----------------------------
-        // 更新へ遷移
-        //-----------------------------
-        const openUpdateMode = async (id) => {
-          if (isLoading.value) {
-            alert('ダブルクリック禁止');
-            return;
-          }
-          isLoading.value = true;
-          successMessage.value = null;
-          errorMessage.value = null;
-          try {
-            const url = `${ES_URL}/_doc/${id}?`;
-            const method = 'GET';
-            const res = await fetch(url, {
-              method: method,
-              headers: { 'Content-Type': 'application/json' },
-            });
-            window.scrollTo({top: 0, behavior: 'auto'});
-            const data = await res.json();
-            source.value = data._source;
-            selectedId.value = data._id;
-            selectedSeqNo.value = data._seq_no;
-            selectedPrimaryTerm.value = data._primary_term;
-            isEditMode.value = true;
-          } finally {
-            await sleep(1000);
-            isLoading.value = false;
-          }
-        };
-
-        //-----------------------------
-        // 登録へ遷移
-        //-----------------------------
-        const openCreateMode = async () => {
-          if (isLoading.value) {
-            alert('ダブルクリック禁止');
-            return;
-          }
-          isLoading.value = true;
-          successMessage.value = null;
-          errorMessage.value = null;
-          try {
-            window.scrollTo({top: 0, behavior: 'auto'});
-            source.value = {};
-            selectedId.value = null;
-            selectedSeqNo.value = null;
-            selectedPrimaryTerm.value = null;
-            isEditMode.value = true;
-          } finally {
-            await sleep(1000);
-            isLoading.value = false;
-          }
-        };
-
-        //-----------------------------
-        // バリデーション
-        //-----------------------------
-        const validate = (event) => {
-          validateTarget(event.target);
-        };
-        const validateAll = () => {
-          const inputs = sourceForm.value.querySelectorAll('.form-control, .form-select, .form-check');
-          Array.from(inputs).forEach(target => {
-            validateTarget(target);
-          });
-        };
-        const validateTarget = (target) => {
-          const feedback = target.parentElement.querySelector('.invalid-feedback');
-          if (!target.checkValidity()) {
-            target.classList.add('is-invalid');
-            if (feedback) {
-              feedback.textContent = target.validationMessage;
-            }
-          } else {
-            target.classList.remove('is-invalid');
-            if (feedback) {
-              feedback.textContent = '';
-            }
-          }
-        };
-
-        //-----------------------------
+        //---------------------------------------------------------------------
         // 共通関数
-        //-----------------------------
+        //---------------------------------------------------------------------
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        const escapeField = (field) => `"${String(field).replace(/"/g, '""')}"`;
+
+        const withLoading = (fn) => {
+          return async function(...args) {
+            if (isLoading.value) {
+              alert('ダブルクリック禁止');
+              return;
+            }
+
+            isLoading.value = true;
+            successMessage.value = null;
+            errorMessage.value = null;
+
+            try {
+              return await fn(...args);
+            } finally {
+              await sleep(500);
+              isLoading.value = false;
+            }
+          };
+        };
+
+        const guardLoading = (fn) => {
+          return async function(...args) {
+            if (isLoading.value) {
+              alert('ダブルクリック禁止');
+              return;
+            }
+
+            successMessage.value = null;
+            errorMessage.value = null;
+            
+            return await fn(...args);
+          };
+        };
+
+        const openCollapse = (field) => {
+          current = field;
+          while (current = current.parentElement?.closest('.collapse')) {
+            bootstrap.Collapse.getOrCreateInstance(current).show();
+          }
+        };
+
+        const checkFilterValidity = (fn) => {
+          return async function(...args) {
+            if (!filterForm.value.checkValidity()) {
+              await validateFilter();
+
+              const fields = document.querySelectorAll('#filter-form .is-invalid');
+              for (const field of fields) {
+                openCollapse(field);
+              }
+
+              const target = fields[0] ?? null;
+              if (target) {
+                const rect = target.getBoundingClientRect();
+                const targetTop = rect.top + window.pageYOffset - 20;
+                window.scrollTo({top: targetTop, behavior: 'smooth'});
+              }
+              
+              return;
+            }
+            
+            return await fn(...args);
+          };
+        }
+
+        const checkSourceValidity = (fn) => {
+          return async function(...args) {
+            if (!sourceForm.value.checkValidity()) {
+              await validateSource();
+
+              const fields = document.querySelectorAll('#source-form .is-invalid');
+              for (const field of fields) {
+                openCollapse(field);
+              }
+
+              const target = fields[0] ?? null;
+              if (target) {
+                const rect = target.getBoundingClientRect();
+                const targetTop = rect.top + window.pageYOffset - 20;
+                window.scrollTo({top: targetTop, behavior: 'smooth'});
+              }
+
+              return;
+            }
+            
+            return await fn(...args);
+          };
+        }
+
+        const validate = async (event) => {
+          await validateField(event.target);
+        };
+
+        const validateField = async (field) => {
+          field.classList.remove('is-invalid');
+          const feedback = field.parentElement.querySelector('.invalid-feedback');
+          if (feedback) {
+            feedback.textContent = '';
+          }
+          if (!field.checkValidity()) {
+            field.classList.add('is-invalid');
+            if (feedback) {
+              feedback.textContent = field.validationMessage;
+            }
+            return false;
+          }
+          return true;
+        };
+
+        const validateFilter = async () => {
+          const fields = filterForm.value.querySelectorAll('.form-control, .form-select, .form-check');
+          let errorField = null;
+          for (const field of fields) {
+            await validateField(field);
+          }
+        };
+
+        const validateSource = async () => {
+          const fields = sourceForm.value.querySelectorAll('.form-control, .form-select, .form-check');
+          let errorField = null;
+          for (const field of fields) {
+            await validateField(field);
+          }
+        };
+
+        //---------------------------------------------------------------------
+        // アクション
+        //---------------------------------------------------------------------
+        //-----------------------------
+        // 検索ボタン
+        //-----------------------------
+        const search = withLoading(checkFilterValidity(async () => {
+          const url = `${ES_URL}/_search`;
+          const method = 'POST';
+          const body = buildQuery();
+          const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+
+          if (res.status >= 400) {
+            errorMessage.value = 'エラーが発生しました。';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+          }
+
+          const data = await res.json();
+          items.value = data.hits ? data.hits.hits : [];
+        }));
 
         //-----------------------------
-        // 初期設定
+        // CSVボタン
         //-----------------------------
-        onMounted(async () => await search());
+        const downloadCsv = withLoading(async () => {
+          const header = csvFileds.map(p => p[0]).map(escapeField).join(',');
+          const fields = csvFileds.map(p => p[1]);
+          const rows = items.value.map(
+            item => fields.map(
+              field => item._source[field]
+            ).map(escapeField).join(',')
+          ).join('\r\n');
+          const content = header + '\r\n' + rows;
+          const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+          const blob = new Blob([bom, content], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'data.csv';
+          link.click();
+          URL.revokeObjectURL(url);
+        });
+
+        //-----------------------------
+        // 更新ボタン
+        //-----------------------------
+        const update = withLoading(checkSourceValidity(async () => {
+          const url = `${ES_URL}/_doc/${selectedId.value}?if_seq_no=${selectedSeqNo.value}&if_primary_term=${selectedPrimaryTerm.value}&refresh=wait_for`;
+          const method = 'PUT';
+          const body = source.value;
+          const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+
+          if (res.status == 409) {
+            errorMessage.value = '更新されています。';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+          }
+          if (res.status >= 400) {
+            errorMessage.value = 'エラーが発生しました。';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+          }
+
+          const data = await res.json();
+          selectedId.value = data._id;
+          selectedSeqNo.value = data._seq_no;
+          selectedPrimaryTerm.value = data._primary_term;
+          successMessage.value = '更新しました。';
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        }));
+
+        //-----------------------------
+        // 登録ボタン
+        //-----------------------------
+        const create = withLoading(checkSourceValidity(async () => {
+          const url = `${ES_URL}/_doc`;
+          const method = 'POST';
+          const body = source.value;
+          const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+
+          if (res.status >= 400) {
+            errorMessage.value = 'エラーが発生しました。';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+          }
+
+          const data = await res.json();
+          selectedId.value = data._id;
+          selectedSeqNo.value = data._seq_no;
+          selectedPrimaryTerm.value = data._primary_term;
+          successMessage.value = '登録しました。';
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        }));
+
+        //-----------------------------
+        // 削除ボタン
+        //-----------------------------
+        const remove = withLoading(async () => {
+          const url = `${ES_URL}/_doc/${selectedId.value}?if_seq_no=${selectedSeqNo.value}&if_primary_term=${selectedPrimaryTerm.value}&refresh=wait_for`;
+          const method = 'DELETE';
+          const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+          });
+          
+          if (res.status == 409) {
+            errorMessage.value = '更新されています。';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+          }
+          if (res.status >= 400) {
+            errorMessage.value = 'エラーが発生しました。';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+          }
+
+          selectedId.value = null;
+          selectedSeqNo.value = null;
+          selectedPrimaryTerm.value = null;
+          successMessage.value = '削除しました。';
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        });
+
+        //-----------------------------
+        // 検索へ遷移ボタン
+        //-----------------------------
+        const openSearchMode = guardLoading(async () => {
+          source.value = {};
+          selectedId.value = null;
+          selectedSeqNo.value = null;
+          selectedPrimaryTerm.value = null;
+          isEditMode.value = false;
+
+          await nextTick();
+
+          window.scrollTo({top: 0, behavior: 'instant'});
+          bootstrap.Collapse.getOrCreateInstance(document.querySelector('#filter-form .collapse'))?.show();
+
+          await search();
+        });
+
+        //-----------------------------
+        // 更新へ遷移ボタン
+        //-----------------------------
+        const openUpdateMode = withLoading(async (id) => {
+          const url = `${ES_URL}/_doc/${id}?`;
+          const method = 'GET';
+          const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          if (res.status >= 400) {
+            errorMessage.value = 'エラーが発生しました。';
+            window.scrollTo({top: 0, behavior: 'auto'});
+            return;
+          }
+
+          const data = await res.json();
+          source.value = data._source;
+          selectedId.value = data._id;
+          selectedSeqNo.value = data._seq_no;
+          selectedPrimaryTerm.value = data._primary_term;
+          isEditMode.value = true;
+          
+          await nextTick();
+
+          window.scrollTo({top: 0, behavior: 'instant'});
+          bootstrap.Collapse.getOrCreateInstance(document.querySelector('#source-form .collapse'))?.show();
+        });
+
+        //-----------------------------
+        // 登録へ遷移ボタン
+        //-----------------------------
+        const openCreateMode = guardLoading(async () => {
+          source.value = {};
+          selectedId.value = null;
+          selectedSeqNo.value = null;
+          selectedPrimaryTerm.value = null;
+          isEditMode.value = true;
+
+          await nextTick();
+
+          window.scrollTo({top: 0, behavior: 'instant'});
+          bootstrap.Collapse.getOrCreateInstance(document.querySelector('#source-form .collapse'))?.show();
+        });
+
+        //-----------------------------
+        // 初期表示
+        //-----------------------------
+        onMounted(async () => await openSearchMode());
 
         return {
-          isEditMode, isLoading,
-          selectedId, selectedSeqNo, selectedPrimaryTerm,
-          successMessage, errorMessage,
-          filterForm, sourceForm,
-          filter, items, source,
-          openUpdateMode, openCreateMode, openSearchMode, 
-          search, update, create, remove,
-          validate,
+          isEditMode, isLoading, selectedId, selectedSeqNo, selectedPrimaryTerm,
+          successMessage, errorMessage, filterForm, sourceForm, filter, items, source,
+          openUpdateMode, openCreateMode, openSearchMode, search, update, create, remove,
+          validate, downloadCsv,
         };
       }
     }).mount('#app');
