@@ -32,7 +32,7 @@
         <!-----------------------------
         検索セクション
         ------------------------------>
-        <form class="card mb-3" @focusout="validate" ref="filterForm" id="filter-form">
+        <form class="card" @focusout="validate" ref="filterForm">
           <div class="card-body">
             <div class="row">
               <div class="accordion accordion-flush">
@@ -46,16 +46,16 @@
                     </button>
                   </h2>
                   <div id="filter-1" class="accordion-collapse collapse">
-                    <div class="accordion-body">
+                    <div class="accordion-body d-grid gap-3">
                       <!-- 全文検索（部分） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-text" class="col-form-label col-2">全文検索</label>
                         <div class="col-10">
                           <input id="filter-text" v-model="filter.text" type="text" class="form-control">
                         </div>
                       </div>
                       <!-- 管理番号（完全） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-no" class="col-form-label col-2">管理番号</label>
                         <div class="col-10">
                           <input id="filter-no" v-model="filter.no" type="text" class="form-control" style="width: 20em; flex: none;">
@@ -74,16 +74,16 @@
                     </button>
                   </h2>
                   <div id="filter-2" class="accordion-collapse collapse">
-                    <div class="accordion-body">
+                    <div class="accordion-body d-grid gap-3">
                       <!-- タイトル（部分） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-title" class="col-form-label col-2">タイトル</label>
                         <div class="col-10">
                           <input id="filter-title" v-model="filter.title" type="text" class="form-control">
                         </div>
                       </div>
                       <!-- 受付日（FROMTO、カレンダー） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-accepted_at" class="col-form-label col-2">受付日</label>
                         <div class="col-10">
                           <div class="input-group">
@@ -94,7 +94,7 @@
                         </div>
                       </div>
                       <!-- 完了日（FROMTO、カレンダー）、未完了のみ（CHECK） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-closed_at" class="col-form-label col-2">完了日</label>
                         <div class="col-10">
                           <div class="input-group">
@@ -107,7 +107,7 @@
                         </div>
                       </div>
                       <!-- 精算月（完全）、未精算のみ（CHECK）、未精算含む（CHECK） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-settlement_month" class="col-form-label col-2">精算月</label>
                         <div class="col-10">
                           <div class="input-group">
@@ -120,28 +120,28 @@
                         </div>
                       </div>
                       <!-- 顧客担当者（部分） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-requested_by" class="col-form-label col-2">顧客担当者</label>
                         <div class="col-10">
                           <input id="filter-requested_by" v-model="filter.requested_by" type="text" class="form-control" style="width: 20em; flex: none;">
                         </div>
                       </div>
                       <!-- 受付担当者（部分） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-accepted_by" class="col-form-label col-2">受付担当者</label>
                         <div class="col-10">
                           <input id="filter-accepted_by" v-model="filter.accepted_by" type="text" class="form-control" style="width: 20em; flex: none;">
                         </div>
                       </div>
                       <!-- 障害発生予定（部分） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-next_incident_prediction" class="col-form-label col-2">障害発生予定</label>
                         <div class="col-10">
                           <input id="filter-next_incident_prediction" v-model="filter.next_incident_prediction" type="text" class="form-control">
                         </div>
                       </div>
                       <!-- 発生業務リスト（CHECK） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-business_category" class="col-form-label col-2">発生業務</label>
                         <div class="col-10">
                           <div class="btn-group" role="group">
@@ -153,14 +153,14 @@
                         </div>
                       </div>
                       <!-- 担当者（部分） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-handled_by" class="col-form-label col-2">担当者</label>
                         <div class="col-10">
                           <input id="filter-handled_by" v-model="filter.handled_by" type="text" class="form-control" style="width: 20em; flex: none;">
                         </div>
                       </div>
                       <!-- 進捗状況リスト（CHECK） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="filter-status" class="col-form-label col-2">進捗状況</label>
                         <div class="col-10">
                           <div class="btn-group" role="group">
@@ -201,17 +201,25 @@
         <!-----------------------------
         検索結果セクション
         ------------------------------>
-        <table class="table table-hover mb-0" id="result-table">
+        <table class="table table-hover mb-0 mt-4">
           <thead class="table-light">
             <tr>
+              <th style="width:5em;"></th>
               <th>管理番号</th>
               <th>タイトル</th>
+              <th>問い合わせ内容</th>
+              <th>調査内容</th>
+              <th>実施内容</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="item in items" :key="item._id" @click="openUpdateMode(item._id)">
+          <tbody class="align-middle">
+            <tr v-for="item in items">
+              <td><button @click="openUpdateMode(item._id)" type="button" class="btn btn-link">詳細</button></td>
               <td>{{ item._source.no }}</td>
               <td>{{ item._source.title }}</td>
+              <td>{{ item._source.description }}</td>
+              <td>{{ item._source.investigation_content }}</td>
+              <td>{{ item._source.resolution_content }}</td>
             </tr>
           </tbody>
         </table>
@@ -221,7 +229,7 @@
       編集モード
       ------------------------------>
       <div v-if="isEditMode" class="col-12">
-        <form class="card" @focusout="validate" ref="sourceForm" id="source-form">
+        <form class="card" @focusout="validate" ref="sourceForm">
           <div class="card-body">
             <div class="row">
               <div class="accordion accordion-flush">
@@ -235,9 +243,9 @@
                     </button>
                   </h2>
                   <div id="source-1" class="accordion-collapse collapse">
-                    <div class="accordion-body">
+                    <div class="accordion-body d-grid gap-3">
                       <!-- 管理番号（自動採番） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-no" class="col-form-label col-2">管理番号</label>
                         <div class="col-10">
                           <input id="source-no" v-model="source.no" type="text" class="form-control" maxlength="20" required style="width: 20em; flex: none;">
@@ -245,7 +253,7 @@
                         </div>
                       </div>
                       <!-- 重複元管理番号 -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-reference_no" class="col-form-label col-2">重複元管理番号</label>
                         <div class="col-10">
                           <input id="source-reference_no" v-model="source.reference_no" type="text" class="form-control" maxlength="20" style="width: 20em; flex: none;">
@@ -253,7 +261,7 @@
                         </div>
                       </div>
                       <!-- 顧客担当者 -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-requested_by" class="col-form-label col-2">顧客担当者</label>
                         <div class="col-10">
                           <input id="source-requested_by" v-model="source.requested_by" type="text" class="form-control">
@@ -261,7 +269,7 @@
                         </div>
                       </div>
                       <!-- 受付担当者 -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-accepted_by" class="col-form-label col-2">受付担当者</label>
                         <div class="col-10">
                           <input id="source-accepted_by" v-model="source.accepted_by" type="text" class="form-control">
@@ -269,7 +277,7 @@
                         </div>
                       </div>
                       <!-- 受付日（カレンダー） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-accepted_at" class="col-form-label col-2">受付日</label>
                         <div class="col-10">
                           <input id="source-accepted_at" v-model="source.accepted_at" type="date" class="form-control">
@@ -277,7 +285,7 @@
                         </div>
                       </div>
                       <!-- タイトル -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-title" class="col-form-label col-2">タイトル</label>
                         <div class="col-10">
                           <input id="source-title" v-model="source.title" type="text" class="form-control">
@@ -285,7 +293,7 @@
                         </div>
                       </div>
                       <!-- 問い合わせ内容（テキストエリア） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-description" class="col-form-label col-2">問い合わせ内容</label>
                         <div class="col-10">
                           <textarea id="source-description" v-model="source.description" class="form-control" rows="5"></textarea>
@@ -305,9 +313,9 @@
                     </button>
                   </h2>
                   <div id="source-2" class="accordion-collapse collapse">
-                    <div class="accordion-body">
+                    <div class="accordion-body d-grid gap-3">
                       <!-- 進捗状況（SELECT） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-status" class="col-form-label col-2">進捗状況</label>
                         <div class="col-10">
                           <select id="source-status" v-model="source.status" class="form-select" required>
@@ -318,7 +326,7 @@
                         </div>
                       </div>
                       <!-- 対応区分（SELECT） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-support_category" class="col-form-label col-2">対応区分</label>
                         <div class="col-10">
                           <select id="source-support_category" v-model="source.support_category" class="form-select">
@@ -328,7 +336,7 @@
                         </div>
                       </div>
                       <!-- 発生業務（SELECT） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-business_category" class="col-form-label col-2">発生業務</label>
                         <div class="col-10">
                           <select id="source-business_category" v-model="source.business_category" class="form-select">
@@ -338,48 +346,48 @@
                         </div>
                       </div>
                       <!-- テスト結果提出日（カレンダー） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-test_result_submitted_at" class="col-form-label col-2">テスト結果提出日</label>
                         <div class="col-10">
                           <input id="source-test_result_submitted_at" v-model="source.test_result_submitted_at" type="date" class="form-control">
                         </div>
                       </div>
                       <!-- テスト結果受領日（カレンダー） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-test_result_received_at" class="col-form-label col-2">テスト結果受領日</label>
                         <div class="col-10">
                           <input id="source-test_result_received_at" v-model="source.test_result_received_at" type="date" class="form-control">
                         </div>
                       </div>
                       <!-- リリース日（カレンダー） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-released_at" class="col-form-label col-2">リリース日</label>
                         <div class="col-10">
                           <input id="source-released_at" v-model="source.released_at" type="date" class="form-control">
                         </div>
                       </div>
                       <!-- 完了日（カレンダー） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-closed_at" class="col-form-label col-2">完了日</label>
                         <div class="col-10">
                           <input id="source-closed_at" v-model="source.closed_at" type="date" class="form-control">
                         </div>
                       </div>
                       <!-- タグリスト -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-tags" class="col-form-label col-2">タグ</label>
                         <div class="col-10">
                           <table class="table table-hover mb-0">
                             <thead class="table-light">
                               <tr>
                                 <th>タグ</th>
-                                <th></th>
+                                <th style="width:5em;"></th>
                               </tr>
                             </thead>
-                            <tbody>
+                            <tbody class="align-middle">
                               <tr v-for="(tag, index) in source.tags" :key="index">
                                 <td><input v-model="tag.name" type="text" class="form-control"></td>
-                                <td><button  @click="source.tags.splice(index, 1)" type="button" class="btn btn-link">削除</button></td>
+                                <td><button @click="source.tags.splice(index, 1)" type="button" class="btn btn-link">削除</button></td>
                               </tr>
                             </tbody>
                           </table>
@@ -399,30 +407,30 @@
                     </button>
                   </h2>
                   <div id="source-3" class="accordion-collapse collapse">
-                    <div class="accordion-body">
+                    <div class="accordion-body d-grid gap-3">
                       <!-- 調査内容（テキストエリア） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-investigation_content" class="col-form-label col-2">調査内容</label>
                         <div class="col-10">
                           <textarea id="source-investigation_content" v-model="source.investigation_content" class="form-control" rows="5"></textarea>
                         </div>
                       </div>
                       <!-- 実施内容（テキストエリア） -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-resolution_content" class="col-form-label col-2">実施内容</label>
                         <div class="col-10">
                           <textarea id="source-resolution_content" v-model="source.resolution_content" class="form-control" rows="5"></textarea>
                         </div>
                       </div>
                       <!-- メモ -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-memo" class="col-form-label col-2">メモ</label>
                         <div class="col-10">
                           <textarea id="source-memo" v-model="source.memo" class="form-control" rows="5"></textarea>
                         </div>
                       </div>
                       <!-- 次回障害発生予定 -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-next_incident_prediction" class="col-form-label col-2">次回障害発生予定</label>
                         <div class="col-10">
                           <textarea id="source-next_incident_prediction" v-model="source.next_incident_prediction" class="form-control" rows="5"></textarea>
@@ -441,9 +449,9 @@
                     </button>
                   </h2>
                   <div id="source-4" class="accordion-collapse collapse">
-                    <div class="accordion-body">
+                    <div class="accordion-body d-grid gap-3">
                       <!-- 担当者、対応時間リスト -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-tasks" class="col-form-label col-2">担当者</label>
                         <div class="col-10">
                           <table class="table table-hover mb-0">
@@ -451,14 +459,14 @@
                               <tr>
                                 <th>担当者</th>
                                 <th>対応時間</th>
-                                <th></th>
+                                <th style="width:5em;"></th>
                               </tr>
                             </thead>
-                            <tbody>
+                            <tbody class="align-middle">
                               <tr v-for="(task, index) in source.tasks" :key="index">
                                 <td><input v-model="task.handled_by" type="text" class="form-control"></td>
                                 <td><input v-model="task.handled_effort_time" type="date" class="form-control"></td>
-                                <td><button  @click="source.tasks.splice(index, 1)" type="button" class="btn btn-link">削除</button></td>
+                                <td><button @click="source.tasks.splice(index, 1)" type="button" class="btn btn-link">削除</button></td>
                               </tr>
                             </tbody>
                           </table>
@@ -478,37 +486,37 @@
                     </button>
                   </h2>
                   <div id="source-5" class="accordion-collapse collapse">
-                    <div class="accordion-body">
+                    <div class="accordion-body d-grid gap-3">
                       <!-- 合計対応時間 -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-total_effort_time" class="col-form-label col-2">合計対応時間</label>
                         <div class="col-10">
                           <input id="source-total_effort_time" v-model="source.total_effort_time" type="number" class="form-control">
                         </div>
                       </div>
                       <!-- 支援対応時間 -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-support_effort_time" class="col-form-label col-2">支援対応時間</label>
                         <div class="col-10">
                           <input id="source-support_effort_time" v-model="source.support_effort_time" type="number" class="form-control">
                         </div>
                       </div>
                       <!-- 障害対応時間 -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-incident_effort_time" class="col-form-label col-2">障害対応時間</label>
                         <div class="col-10">
                           <input id="source-incident_effort_time" v-model="source.incident_effort_time" type="number" class="form-control">
                         </div>
                       </div>
                       <!-- 精算月 -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-settlement_month" class="col-form-label col-2">精算月</label>
                         <div class="col-10">
                           <input id="source-settlement_month" v-model="source.settlement_month" type="month" class="form-control">
                         </div>
                       </div>
                       <!-- コメント１ -->
-                      <div class="row mb-3">
+                      <div class="row">
                         <label for="source-comment1" class="col-form-label col-2">コメント１</label>
                         <div class="col-10">
                           <textarea id="source-comment1" v-model="source.comment1" class="form-control" rows="5"></textarea>
@@ -554,6 +562,17 @@
         // カスタマイズ範囲
         //---------------------------------------------------------------------
         //-----------------------------
+        // CSV
+        //-----------------------------
+        const csvFileds = [
+          ['管理番号', 'no'],
+          ['タイトル', 'title'],
+          ['問い合わせ内容', 'description'],
+          ['調査内容', 'investigation_content'],
+          ['実施内容', 'resolution_content'],
+        ]
+
+        //-----------------------------
         // 検索条件
         //-----------------------------
         const filter = ref({
@@ -598,9 +617,7 @@
                   'title',
                   'description',
                   'investigation_content',
-                  'resolution_content',
-                  'memo',
-                  'next_incident_prediction'
+                  'resolution_content'
                 ]
               }
             });
@@ -652,15 +669,6 @@
           }
           return body;
         }
-
-        //-----------------------------
-        // CSVフィールド
-        //-----------------------------
-        const csvFileds = [
-          ['管理番号', 'no'],
-          ['タイトル', 'title'],
-          ['問い合わせ内容', 'description'],
-        ]
 
         //---------------------------------------------------------------------
         // カスタマイズ範囲はここまで、以下は変更不要
@@ -733,7 +741,7 @@
             if (!filterForm.value.checkValidity()) {
               await validateFilter();
 
-              const fields = document.querySelectorAll('#filter-form .is-invalid');
+              const fields = filterForm.value.querySelectorAll('.is-invalid');
               for (const field of fields) {
                 openCollapse(field);
               }
@@ -757,7 +765,7 @@
             if (!sourceForm.value.checkValidity()) {
               await validateSource();
 
-              const fields = document.querySelectorAll('#source-form .is-invalid');
+              const fields = sourceForm.value.querySelectorAll('.is-invalid');
               for (const field of fields) {
                 openCollapse(field);
               }
@@ -846,7 +854,7 @@
           const fields = csvFileds.map(p => p[1]);
           const rows = items.value.map(
             item => fields.map(
-              field => item._source[field]
+              field => (item._source[field] ?? '')
             ).map(escapeField).join(',')
           ).join('\r\n');
           const content = header + '\r\n' + rows;
@@ -961,7 +969,7 @@
           await nextTick();
 
           window.scrollTo({top: 0, behavior: 'instant'});
-          bootstrap.Collapse.getOrCreateInstance(document.querySelector('#filter-form .collapse'))?.show();
+          bootstrap.Collapse.getOrCreateInstance(filterForm.value.querySelector('.collapse'))?.show();
 
           await search();
         });
@@ -993,7 +1001,7 @@
           await nextTick();
 
           window.scrollTo({top: 0, behavior: 'instant'});
-          bootstrap.Collapse.getOrCreateInstance(document.querySelector('#source-form .collapse'))?.show();
+          bootstrap.Collapse.getOrCreateInstance(sourceForm.value.querySelector('.collapse'))?.show();
         });
 
         //-----------------------------
@@ -1009,7 +1017,7 @@
           await nextTick();
 
           window.scrollTo({top: 0, behavior: 'instant'});
-          bootstrap.Collapse.getOrCreateInstance(document.querySelector('#source-form .collapse'))?.show();
+          bootstrap.Collapse.getOrCreateInstance(sourceForm.value.querySelector('.collapse'))?.show();
         });
 
         //-----------------------------
